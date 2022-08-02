@@ -1,7 +1,7 @@
 # Para que el programa funcione deben estar instalados los binarios de tesseract y plopper => (El cual debe ser agregado al PATH)
 # !Importante recordar cambiar las rutas si se cambia el lugar de ejecución
 # Archivos necesarios (aparte de las librerias instaladas):
-# Indicar la ruta del tesseract en la linea 103
+# Indicar la ruta del tesseract en la linea 63
 """
     raiz/
         ./img/
@@ -22,14 +22,7 @@ import cv2
 # Sistema y manejo de archivos
 import os, shutil
 from os import system
-import sys
 from packages import tiempo as cron
-
-# Para Conexión DB
-import pymysql
-import paramiko
-from paramiko import SSHClient
-from sshtunnel import SSHTunnelForwarder
 
 
 ###################################
@@ -89,7 +82,7 @@ with open(txt_dir + out_txt, 'w') as txt:
                 # Extraccion del nombre del archivo sin la extension
                 spl = pdf_file.split('.')
                 new_name = spl[0]
-                print('Leyendo: ' + pdf_file + '\n') 
+                print(f'Leyendo: {pdf_file}' + '\n') 
 
                 # Creacion de ruta al archivo
                 in_file = (pdf_dir + '\\' + pdf_file)
@@ -97,13 +90,11 @@ with open(txt_dir + out_txt, 'w') as txt:
                 # convert_from_path convierte el pdf a imagen (una por página) y retorna la lista de imagenes # imagen sin ningun tipo de formato la cual hay que guardar con alguna extension para aplicar ocr
                 pages = convert_from_path(in_file, 550)
 
-                i = 0                       # Contador para páginas
                 texto = ""                  # Inicialisamos el texto en vacio por cada documento
                 n_paginas = len(pages)      # Numero de paginas en el documento
 
-                for page in pages:
+                for i, page in enumerate(pages, start=1):
 
-                    i+= 1
                     # Damos el nombre a la imagen de salida
                     img_name = "archivo_%s_pagina_%d_de_%d.JPEG" %(new_name, i, n_paginas)
 
@@ -114,16 +105,16 @@ with open(txt_dir + out_txt, 'w') as txt:
                     page.save(out_file, 'JPEG')     # Guardamos la imagen
 
                     # Leemos la imagen con cv2 y aplicamos ocr
-                    img = cv2.imread(out_file)      
+                    img = cv2.imread(out_file)
                     ocr = pytesseract.image_to_string(img, lang="spa") # recibe una imagen y el lenguaje para retornar un string
 
                     ocr = str_fix(ocr)      # Limpiamos los saltos de linea del demas del texto devuelto en ocr
-                    texto = texto + " " + ocr       #concatenamos el texto
-    
+                    texto = f"{texto} {ocr}"
+
                 # Grabamos en archivo de salida
                 txt.write("%s|%s\n"%(new_name, texto))
 
-                
+
 
             # Eliminamos las imagenes generadas recorriendo cada archivo en la carpeta de imagenes
             for filename in os.listdir(img_dir):
@@ -134,10 +125,10 @@ with open(txt_dir + out_txt, 'w') as txt:
                     elif os.path.isdir(file_path):
                         shutil.rmtree(file_path)
                 except Exception as e:
-                    print('Failed to delete %s. Reason: %s' % (file_path, e))
-            
+                    print(f'Failed to delete {file_path}. Reason: {e}')
+
         except Exception as e:
-            print('Fallo al leer: %s. Error: %s' % (pdf_file, e))
+            print(f'Fallo al leer: {pdf_file}. Error: {e}')
 
 tomar_tiempo.tiempo()
     
